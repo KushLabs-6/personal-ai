@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#764ba2">
+    <title>AI Assistant</title>
+    <style>
+             * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: white;
+        }
+             .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 90vh;
+        }
+             .header {
+            text-align: center;
+            padding: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .header h1 {
+            font-size: 1.8rem;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            opacity: 0.8;
+            font-size: 0.9rem;
+        }
+             .chat-messages {
+                 flex: 1;
+                 padding: 20px;
+                 overflow-y: auto;
+                 display: flex;
+                 flex-direction: column;
+                 gap: 15px;
+             }
+
+             .message {
+                 max-width: 80%;
+                 padding: 12px 16px;
+                 border-radius: 18px;
+                 line-height: 1.5;
+                 word-wrap: break-word;
+             }
+
+             .user-message {
+                 background: rgba(102, 126, 234, 0.3);
+                 margin-left: auto;
+                 border-bottom-right-radius: 5px;
+             }
+
+             .assistant-message {
+                 background: rgba(255, 255, 255, 0.1);
+                 margin-right: auto;
+                 border-bottom-left-radius: 5px;
+             }
+
+             .message-time {
+                 font-size: 0.7rem;
+                 opacity: 0.6;
+                 margin-top: 5px;
+             }
+
+             .input-area {
+                 display: flex;
+                 padding: 20px;
+                 gap: 10px;
+                 background: rgba(0, 0, 0, 0.2);
+             }
+
+             #userInput {
+                 flex: 1;
+                 padding: 15px 20px;
+                 border: none;
+                 border-radius: 30px;
+                 background: rgba(255, 255, 255, 0.9);
+                 color: #333;
+                 font-size: 1rem;
+                 outline: none;
+             }
+
+             #userInput::placeholder {
+                 color: #666;
+                 opacity: 0.7;
+             }
+
+             #sendButton {
+                 padding: 0 25px;
+                 background: linear-gradient(135deg, #667eea, #764ba2);
+                 border: none;
+                 border-radius: 30px;
+                 color: white;
+                 font-weight: bold;
+                 cursor: pointer;
+                 transition: transform 0.2s;
+             }
+
+             #sendButton:hover {
+                 transform: scale(1.05);
+             }
+
+             #sendButton:active {
+                 transform: scale(0.98);
+             }
+
+             .status {
+                 text-align: center;
+                 padding: 10px;
+                 font-size: 0.8rem;
+                 opacity: 0.7;
+                 border-top: 1px solid rgba(255, 255, 255, 0.1);
+             }
+
+             .controls {
+                 display: flex;
+                 justify-content: center;
+                 gap: 10px;
+                 padding: 15px;
+                 flex-wrap: wrap;
+             }
+
+             .btn {
+                 padding: 8px 16px;
+                 border: none;
+                 border-radius: 20px;
+                 background: rgba(255, 255, 255, 0.2);
+                 color: white;
+                 cursor: pointer;
+                 font-size: 0.9rem;
+                 transition: all 0.3s;
+             }
+
+             .btn:hover {
+                 background: rgba(255, 255, 255, 0.3);
+                 transform: translateY(-2px);
+             }
+
+             .btn:active {
+                 transform: translateY(0);
+             }
+
+             .loading {
+                 text-align: center;
+                 padding: 20px;
+                 opacity: 0.7;
+                 font-style: italic;
+             }
+
+             @media (max-width: 480px) {
+                 body {
+                     padding: 10px;
+                 }
+
+                 .header h1 {
+                     font-size: 1.5rem;
+                 }
+
+                 .message {
+                     max-width: 85%;
+                 }
+                 }
+         </style>
+     </head>
+     <body>
+     <div class="container">
+         <div class="header">
+             <h1>🤖 AI Assistant</h1>
+             <p>Your persistent AI companion</p>
+         </div>
+
+         <div class="chat-messages" id="chatMessages">
+             <div class="message assistant-message">
+                 Hello! I'm your AI assistant. Your conversations are saved automatically so you never lose progress. How can I help you today?
+                 <div class="message-time" id="firstTime"></div>
+             </div>
+         </div>
+
+         <div class="controls">
+             <button class="btn" id="clearChat">Clear Chat</button>
+             <button class="btn" id="historyBtn">History</button>
+             <button class="btn" id="exportBtn">Export</button>
+         </div>
+
+         <div class="input-area">
+             <input type="text" id="userInput" placeholder="Type your message here..." autocomplete="off">
+             <button id="sendButton">Send</button>
+         </div>
+
+         <div class="status" id="status">Ready • Conversations saved automatically</div>
+     </div>
+
+         <script>
+             class AIAssistant {
+                 constructor() {
+                     this.messages = [];
+                     this.currentSessionId = null;
+                     this.loadConversations();
+                     this.startNewSession();
+                     displayTime();
+                 }
+
+                 startNewSession() {
+                     const timestamp = new Date().toISOString();
+                     this.currentSessionId = `session_${timestamp.replace(/[:.]/g, '-')}`;
+                     this.messages = [];
+                     this.addMessage('assistant', 'Hello! I\'m your AI assistant. Your conversations are saved automatically so you never lose progress. How can I help you today?');
+                     this.saveSession();
+                 }
+
+                 addMessage(role, content) {
+                     const message = {
+                         id: Date.now() + Math.random(),
+                         role,
+                         content,
+                         timestamp: new Date().toISOString()
+                     };
+                     this.messages.push(message);
+                     this.renderMessage(message);
+                     this.saveSession();
+                     this.scrollToBottom();
+                 }
+
+                 renderMessage(message) {
+                     const chatMessages = document.getElementById('chatMessages');
+                     const messageDiv = document.createElement('div');
+                     messageDiv.className = `message ${message.role === 'user' ? 'user-message' : 'assistant-message'}`;
+                     messageDiv.innerHTML = `
+                         ${this.escapeHtml(message.content)}
+                         <div class="message-time">${this.formatTime(message.timestamp)}</div>
+                     `;
+                     chatMessages.appendChild(messageDiv);
+                 }
+
+                 escapeHtml(text) {
+                     const div = document.createElement('div');
+                     div.textContent = text;
+                     return div.innerHTML;
+                 }
+
+                 formatTime(isoString) {
+                     const date = new Date(isoString);
+                     return date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                 }
+
+                 scrollToBottom() {
+                     const chatMessages = document.getElementById('chatMessages');
+                     chatMessages.scrollTop = chatMessages.scrollHeight;
+                 }
+
+                 saveSession() {
+                     const sessionData = {
+                         id: this.currentSessionId,
+                         timestamp: new Date().toISOString(),
+                         messages: this.messages
+                     };
+
+                     let sessions = JSON.parse(localStorage.getItem('aiAssistantSessions') || '[]');
+                     const existingIndex = sessions.findIndex(s => s.id === this.currentSessionId);
+                     if (existingIndex >= 0) {
+                         sessions[existingIndex] = sessionData;
+                     } else {
+                         sessions.push(sessionData);
+                     }
+
+                     // Keep only last 50 sessions
+                     if (sessions.length > 50) {
+                         sessions.splice(0, sessions.length - 50);
+                     }
+
+                     localStorage.setItem('aiAssistantSessions', JSON.stringify(sessions));
+                     this.updateStatus();
+                 }
+
+                 loadConversations() {
+                     // Loaded in constructor
+                 }
+
+                 getConversationHistory() {
+                     return JSON.parse(localStorage.getItem('aiAssistantSessions') || '[]');
+                 }
+
+                 loadSession(sessionId) {
+                     const sessions = this.getConversationHistory();
+                     const session = sessions.find(s => s.id === sessionId);
+                     if (session) {
+                         this.messages = session.messages;
+                         this.currentSessionId = session.id;
+                         this.renderChat();
+                         this.updateStatus(`Loaded: ${sessionId}`);
+                     }
+                 }
+
+                 renderChat() {
+                     const chatMessages = document.getElementById('chatMessages');
+                     chatMessages.innerHTML = '';
+                     this.messages.forEach(msg => this.renderMessage(msg));
+                 }
+
+                 clearChat() {
+                     if (confirm('Clear current chat? This will start a fresh conversation.')) {
+                         this.startNewSession();
+                     }
+                 }
+
+                 exportConversation() {
+                     const data = {
+                         sessionId: this.currentSessionId,
+                         timestamp: new Date().toISOString(),
+                         messages: this.messages
+                     };
+
+                     const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+                     const url = URL.createObjectURL(blob);
+                     const a = document.createElement('a');
+                     a.href = url;
+                     a.download = `ai-conversation-${this.currentSessionId}.json`;
+                     a.click();
+                     URL.revokeObjectURL(url);
+
+                     this.updateStatus('Conversation exported!');
+                 }
+
+                 showHistory() {
+                     const sessions = this.getConversationHistory();
+                     if (sessions.length === 0) {
+                         alert('No conversation history found.');
+                         return;
+                     }
+
+                     let historyText = 'Recent Conversations:\n\n';
+                     sessions.slice(0, 10).forEach((session, index) => {
+                         const date = new Date(session.timestamp);
+                         const msgCount = session.messages.length;
+                         historyText += `${index + 1}. ${date.toLocaleString()}\n   ${msgCount} messages\n   ID: ${session.id.substring(0, 12)}...\n\n`;
+                     });
+
+                     alert(historyText);
+                 }
+
+                 updateStatus(message = 'Ready • Conversations saved automatically') {
+                     document.getElementById('status').textContent = message;
+                 }
+
+                 async getAIResponse(userMessage) {
+                     // Show loading
+                     this.updateStatus('Thinking...');
+
+                     // Simple echo response for demo - replace with actual API call
+                     await new Promise(resolve => setTimeout(resolve, 1000));
+
+                     // You can replace this with actual AI API integration
+                     const responses = [
+                         `That's interesting! You said: "${userMessage}". Let me think about that...`,
+                         `I understand you're asking about "${userMessage}". Here's my perspective:`,
+                         `Great question about "${userMessage}". Based on what you've shared:`,
+                         `Thanks for sharing that! Regarding "${userMessage}", I'd say:`,
+                         `You mentioned "${userMessage}". Let me break this down for you:`
+                     ];
+
+                     const randomResponse = responses[Math.floor(Math.random() * responses.length)];
+                     return randomResponse + "\n\n*(Note: This is a demo response. For actual AI, you would integrate with Claude API, OpenAI, or other services)*";
+                 }
+             }
+
+             // Initialize assistant
+             const assistant = new AIAssistant();
+
+             // Event listeners
+             document.getElementById('sendButton').addEventListener('click', async () => {
+                 const input = document.getElementById('userInput');
+                 const message = input.value.trim();
+
+                 if (message) {
+                     // Add user message
+                     assistant.addMessage('user', message);
+                     input.value = '';
+
+                     // Get AI response
+                     const aiResponse = await assistant.getAIResponse(message);
+                     assistant.addMessage('assistant', aiResponse);
+                 }
+             });
+
+             document.getElementById('userInput').addEventListener('keypress', (e) => {
+                 if (e.key === 'Enter') {
+                     document.getElementById('sendButton').click();
+                 }
+             });
+
+             document.getElementById('clearChat').addEventListener('click', () => assistant.clearChat());
+             document.getElementById('historyBtn').addEventListener('click', () => assistant.showHistory());
+             document.getElementById('exportBtn').addEventListener('click', () => assistant.exportConversation());
+
+             // Set initial time
+             function displayTime() {
+                 const timeEl = document.getElementById('firstTime');
+                 if (timeEl) {
+                     timeEl.textContent = new Date().toLocaleTimeString();
+                 }
+             }
+         </script>
+         <script>
+           if ('serviceWorker' in navigator) {
+             window.addEventListener('load', () => {
+               navigator.serviceWorker.register('/sw.js')
+                 .then(registration => {
+                   console.log('ServiceWorker registration successful');
+                 })
+                 .catch(error => {
+                   console.log('ServiceWorker registration failed:', error);
+                 });
+             });
+           }
+         </script>
+     </body>
+</html>
+
